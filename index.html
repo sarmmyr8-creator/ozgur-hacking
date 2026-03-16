@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>OZGUR SYSTEM - IDENTITY SNIFFER</title>
+    <style>
+        body { background: #000; color: #0f0; font-family: 'Courier New', monospace; padding: 20px; overflow-x: hidden; }
+        .data-box { border: 2px solid #0f0; padding: 30px; box-shadow: 0 0 25px #0f0; background: rgba(0,10,0,0.9); position: relative; }
+        .danger { color: #ff0000; font-weight: bold; text-shadow: 0 0 10px #f00; animation: blink 0.5s infinite; }
+        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.2; } }
+        .info-row { margin: 15px 0; border-bottom: 1px solid #111; padding-bottom: 5px; }
+        .label { color: #888; font-size: 0.8rem; }
+        #map { width: 100%; height: 200px; margin-top: 15px; border: 1px solid #0f0; display: none; }
+    </style>
+</head>
+<body>
+
+<div class="data-box">
+    <h2 class="danger">[!] CRITICAL: DEVICE EXPOSED</h2>
+    <p>> تم اختراق بروتوكول الخصوصية الخاص بك..</p>
+    <hr style="border: 0.5px solid #0f0;">
+
+    <div class="info-row">
+        <div class="label">MODEL_NAME:</div>
+        <div id="deviceModel">جاري تحليل الهاردوير...</div>
+    </div>
+
+    <div class="info-row">
+        <div class="label">EXACT_LOCATION:</div>
+        <div id="location">بانتظار وصول القمر الصناعي...</div>
+    </div>
+
+    <div class="info-row">
+        <div class="label">IP_ADDRESS:</div>
+        <div id="ipAddress">127.0.0.1 (Hidden)</div>
+    </div>
+
+    <div class="info-row">
+        <div class="label">BATTERY_LEVEL:</div>
+        <div id="battery">تحليل الطاقة...</div>
+    </div>
+
+    <div id="map"></div>
+
+    <p class="danger" style="margin-top: 20px;">
+        سيتم إرسال إحداثياتك الآن إلى سيرفرات "أوزغور السموقي"..
+    </p>
+</div>
+
+<script>
+    // 1. كشف اسم الجهاز بدقة (محاولة)
+    function getDeviceName() {
+        const ua = navigator.userAgent;
+        if (/android/i.test(ua)) {
+            const match = ua.match(/Android\s([^\s;]+).+?(\S+)\sBuild/);
+            return match ? "Samsung/Android Device (" + match[2] + ")" : "Android Mobile";
+        }
+        if (/iPhone|iPad|iPod/i.test(ua)) {
+            return "Apple Device (iPhone/iPad)";
+        }
+        return navigator.platform;
+    }
+    document.getElementById('deviceModel').innerText = getDeviceName();
+
+    // 2. كشف الموقع بدقة (GPS)
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(async (position) => {
+            const lat = position.coords.latitude;
+            const lon = position.coords.longitude;
+            
+            // تحويل الإحداثيات لاسم منطقة حقيقي باستخدام خدمة مجانية
+            try {
+                const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`);
+                const data = await res.json();
+                document.getElementById('location').innerText = data.display_name;
+                
+                // إظهار خريطة بسيطة (رابط صورة)
+                const mapDiv = document.getElementById('map');
+                mapDiv.style.display = "block";
+                mapDiv.innerHTML = `<img src="https://static-maps.yandex.ru/1.x/?lang=en_US&ll=${lon},${lat}&z=14&l=map&size=600,200" style="width:100%">`;
+            } catch (e) {
+                document.getElementById('location').innerText = `Lat: ${lat}, Lon: ${lon}`;
+            }
+        }, () => {
+            document.getElementById('location').innerText = "تم رفض الوصول للموقع (الهدف حذر!)";
+        });
+    }
+
+    // 3. كشف الـ IP والبطارية (نفس الكود السابق)
+    fetch('https://api.ipify.org?format=json').then(r => r.json()).then(d => document.getElementById('ipAddress').innerText = d.ip);
+    
+    if (navigator.getBattery) {
+        navigator.getBattery().then(b => {
+            document.getElementById('battery').innerText = Math.round(b.level * 100) + "%";
+        });
+    }
+</script>
+
+</body>
+</html>
